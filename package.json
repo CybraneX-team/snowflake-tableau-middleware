@@ -1,0 +1,30 @@
+{
+  "name": "snowflake-tableau-middleware",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "tableau",
+    "snowflake",
+    "wdc",
+    "redis",
+    "cache"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "nodemon": "^3.1.9",
+    "redis": "^4.7.0",
+    "snowflake-sdk": "^2.0.3"
+  },
+  "devDependencies": {
+    "@types/tableau-js-api": "^2.8.5"
+  }
+}
