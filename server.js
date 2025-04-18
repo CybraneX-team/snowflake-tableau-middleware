@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -135,37 +134,40 @@ if (/^select/i.test(schemaQuery) && !/limit\s+\d+$/i.test(schemaQuery)) {
 // API endpoint for data with caching
 app.post('/api/data', async (req, res) => {
   try {
-    const connectionData = req.body;
-    const query = connectionData.query;
-    const cacheTime = parseInt(connectionData.cacheTime) || 300; // Default 5 minutes
-    const cacheAlgorithm = connectionData.cacheAlgorithm || 'fcfs';
-    
-    // Generate cache key
-    const cacheKey = cacheManager.generateKey(query, connectionData);
-    
-    // Try to get from cache first
+    const startTotal = Date.now();
+
+    const { query, cacheTime, cacheAlgorithm } = req.body;
+    const cacheKey = cacheManager.generateKey(query, req.body);
+
+    const startCache = Date.now();
     let data = await cacheManager.get(cacheKey, cacheAlgorithm);
-    
+    const endCache = Date.now();
+
     if (data) {
-      console.log(`Cache hit for query: ${query.substring(0, 50)}...`);
+      console.log(`[TIMING] Cache HIT: ${(endCache - startCache)} ms`);
+      console.log(`[TIMING] Total response time (from cache): ${Date.now() - startTotal} ms`);
       return res.json(data);
     }
-    
-    console.log(`Cache miss for query: ${query.substring(0, 50)}...`);
-    
-    // If not in cache, fetch from Snowflake
-    const connection = await connectToSnowflake(connectionData);
+
+    console.log(`[TIMING] Cache MISS: ${(endCache - startCache)} ms`);
+
+    const connection = await connectToSnowflake(req.body);
+    const startSnowflake = Date.now();
     data = await executeQuery(connection, query);
-    
-    // Store in cache
-    await cacheManager.set(cacheKey, data, cacheTime, cacheAlgorithm);
-    
+    const endSnowflake = Date.now();
+
+    console.log(`[TIMING] Snowflake query time: ${endSnowflake - startSnowflake} ms`);
+
+    await cacheManager.set(cacheKey, data, parseInt(cacheTime), cacheAlgorithm);
+    console.log(`[TIMING] Total response time (after cache set): ${Date.now() - startTotal} ms`);
+
     res.json(data);
   } catch (error) {
     console.error('Data API error:', error);
     res.status(500).json({ error: error.message });
   }
 });
+
 
 // API endpoint to view cache stats
 app.get('/api/cache/stats', async (req, res) => {
